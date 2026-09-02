@@ -793,6 +793,108 @@ canvas{width:100%;height:100%}
   color:#ffd5d1;
 }
 
+
+.fleet-title-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+  min-width:0;
+}
+.column-filter-wrap{
+  position:relative;
+  flex:0 0 auto;
+}
+.column-filter-btn{
+  height:28px;
+  padding:0 10px;
+  border:1px solid #35536d;
+  border-radius:6px;
+  background:#0b2a43;
+  color:#eaf4ff;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.column-filter-btn:hover{
+  background:#123b5f;
+}
+.column-filter-menu{
+  position:absolute;
+  top:33px;
+  right:0;
+  z-index:20000;
+  min-width:170px;
+  max-height:310px;
+  overflow:auto;
+  padding:8px;
+  border:1px solid #35536d;
+  border-radius:7px;
+  background:#081f33;
+  box-shadow:0 10px 28px rgba(0,0,0,.42);
+}
+.column-filter-menu label{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:5px 4px;
+  color:#dce9f5;
+  font-size:10px;
+  font-weight:500;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.column-filter-menu label:hover{
+  background:#0d2e4a;
+  border-radius:4px;
+}
+.column-filter-menu input{
+  margin:0;
+}
+.table-panel table .col-hidden{
+  display:none !important;
+}
+@media (max-width:1100px){
+  .fleet-title-actions{gap:5px}
+  .column-filter-btn{padding:0 7px;font-size:9px}
+}
+
+
+/* Rolagem horizontal da tabela de frota quando as colunas ultrapassarem o card */
+.table-panel .table-wrap{
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  scrollbar-color:#35536d #081f33;
+  padding-bottom:8px;
+}
+.table-panel .table-wrap::-webkit-scrollbar{
+  height:9px;
+}
+.table-panel .table-wrap::-webkit-scrollbar-track{
+  background:#081f33;
+  border-radius:8px;
+}
+.table-panel .table-wrap::-webkit-scrollbar-thumb{
+  background:#35536d;
+  border-radius:8px;
+}
+.table-panel .table-wrap::-webkit-scrollbar-thumb:hover{
+  background:#4b7191;
+}
+.table-panel .table-wrap table{
+  width:max-content;
+  min-width:100%;
+}
+.table-panel .table-wrap th,
+.table-panel .table-wrap td{
+  white-space:nowrap;
+}
+
 </style>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -836,15 +938,37 @@ canvas{width:100%;height:100%}
     <div class="panel table-panel">
       <div class="panel-title fleet-title">
         <span>FROTA ATUAL – SITUAÇÃO DOS VEÍCULOS</span>
-        <div class="fleet-pager" aria-label="Paginação da frota">
-          <span id="pageLabel">1 - 10 / 20</span>
-          <button type="button" class="page-arrow" id="prevPage" aria-label="Página anterior">‹</button>
-          <button type="button" class="page-arrow" id="nextPage" aria-label="Próxima página">›</button>
+        <div class="fleet-title-actions">
+          <div class="column-filter-wrap">
+            <button type="button" id="columnFilterBtn" class="column-filter-btn" aria-haspopup="true" aria-expanded="false">
+              Colunas ▾
+            </button>
+            <div id="columnFilterMenu" class="column-filter-menu" hidden>
+              <label><input type="checkbox" data-col="indicator" checked> Indicador</label>
+              <label><input type="checkbox" data-col="vehicle" checked> Veículo</label>
+              <label><input type="checkbox" data-col="garage" checked> Garagem</label>
+              <label><input type="checkbox" data-col="client" checked> Cliente</label>
+              <label><input type="checkbox" data-col="unit" checked> Unidade</label>
+              <label><input type="checkbox" data-col="line" checked> Linha</label>
+              <label><input type="checkbox" data-col="shift" checked> Turno</label>
+              <label><input type="checkbox" data-col="driver" checked> Motorista</label>
+              <label><input type="checkbox" data-col="speed" checked> Velocidade</label>
+              <label><input type="checkbox" data-col="status" checked> Status</label>
+              <label><input type="checkbox" data-col="delay" checked> Atraso</label>
+              <label><input type="checkbox" data-col="ignition" checked> Ignição</label>
+              <label><input type="checkbox" data-col="date" checked> Data/Hora</label>
+            </div>
+          </div>
+          <div class="fleet-pager" aria-label="Paginação da frota">
+            <span id="pageLabel">1 - 10 / 20</span>
+            <button type="button" class="page-arrow" id="prevPage" aria-label="Página anterior">‹</button>
+            <button type="button" class="page-arrow" id="nextPage" aria-label="Próxima página">›</button>
+          </div>
         </div>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th></th><th>Veículo</th><th>Garagem</th><th>Cliente</th><th>Unidade</th><th>Linha</th><th>Turno</th><th>Motorista</th><th>Velocidade</th><th>Status</th><th>Atraso (min)</th><th>Ignição</th><th>Data/Hora</th></tr></thead>
+          <thead><tr><th data-col="indicator"></th><th data-col="vehicle">Veículo</th><th data-col="garage">Garagem</th><th data-col="client">Cliente</th><th data-col="unit">Unidade</th><th data-col="line">Linha</th><th data-col="shift">Turno</th><th data-col="driver">Motorista</th><th data-col="speed">Velocidade</th><th data-col="status">Status</th><th data-col="delay">Atraso (min)</th><th data-col="ignition">Ignição</th><th data-col="date">Data/Hora</th></tr></thead>
           <tbody id="fleetBody"></tbody>
         </table>
       </div>
@@ -1068,6 +1192,62 @@ function formatarTurno(valor){
   return texto;
 }
 function statusClass(s){return s==="Em viagem"?"green":s==="Parado"?"yellow":"red"}
+
+const visibleColumns = new Set([
+  "indicator","vehicle","garage","client","unit","line","shift",
+  "driver","speed","status","delay","ignition","date"
+]);
+
+function applyColumnVisibility(){
+  document.querySelectorAll(".table-panel [data-col]").forEach(el=>{
+    el.classList.toggle("col-hidden", !visibleColumns.has(el.dataset.col));
+  });
+}
+
+function setupColumnFilter(){
+  const btn=q("#columnFilterBtn");
+  const menu=q("#columnFilterMenu");
+  if(!btn || !menu) return;
+
+  btn.addEventListener("click",ev=>{
+    ev.stopPropagation();
+    const fechado=menu.hasAttribute("hidden");
+    if(fechado){
+      menu.removeAttribute("hidden");
+      btn.setAttribute("aria-expanded","true");
+    }else{
+      menu.setAttribute("hidden","");
+      btn.setAttribute("aria-expanded","false");
+    }
+  });
+
+  menu.addEventListener("click",ev=>ev.stopPropagation());
+
+  menu.querySelectorAll('input[type="checkbox"][data-col]').forEach(cb=>{
+    cb.addEventListener("change",()=>{
+      const col=cb.dataset.col;
+
+      // Evita esconder absolutamente todas as colunas.
+      if(!cb.checked && visibleColumns.size===1){
+        cb.checked=true;
+        return;
+      }
+
+      if(cb.checked) visibleColumns.add(col);
+      else visibleColumns.delete(col);
+
+      applyColumnVisibility();
+    });
+  });
+
+  document.addEventListener("click",()=>{
+    if(!menu.hasAttribute("hidden")){
+      menu.setAttribute("hidden","");
+      btn.setAttribute("aria-expanded","false");
+    }
+  });
+}
+
 const PAGE_SIZE=10;
 let currentPage=0;
 
@@ -1100,8 +1280,9 @@ function render(){
 
   updatePager(data.length);
   const pageStart=currentPage*PAGE_SIZE;
-  const rows=data.slice(pageStart,pageStart+PAGE_SIZE).map(v=>`<tr><td><span class="dot ${statusClass(v.status)}"></span></td><td>${v.id}</td><td>${v.garage}</td><td>${v.client}</td><td>${v.unit}</td><td>${v.line}</td><td>${v.shift}</td><td>${v.driver}</td><td>${v.speed} km/h</td><td>${v.status}</td><td>${v.delay}</td><td>${v.ignition}</td><td>${formatarDataHora(v.dataHora)}</td></tr>`).join("");
+  const rows=data.slice(pageStart,pageStart+PAGE_SIZE).map(v=>`<tr><td data-col="indicator"><span class="dot ${statusClass(v.status)}"></span></td><td data-col="vehicle">${v.id}</td><td data-col="garage">${v.garage}</td><td data-col="client">${v.client}</td><td data-col="unit">${v.unit}</td><td data-col="line">${v.line}</td><td data-col="shift">${v.shift}</td><td data-col="driver">${v.driver}</td><td data-col="speed">${v.speed} km/h</td><td data-col="status">${v.status}</td><td data-col="delay">${v.delay}</td><td data-col="ignition">${v.ignition}</td><td data-col="date">${formatarDataHora(v.dataHora)}</td></tr>`).join("");
   q("#fleetBody").innerHTML=rows;
+  applyColumnVisibility();
 
   initRealMap();
 
@@ -1256,8 +1437,10 @@ function carregarFrotaAtual(){
   document.body.appendChild(script);
 }
 
+setupColumnFilter();
 populateFilters();
 render();
+applyColumnVisibility();
 carregarFrotaAtual();
 
 ["garagemFilter","clienteFilter","unidadeFilter","turnoFilter"].forEach(id=>{
