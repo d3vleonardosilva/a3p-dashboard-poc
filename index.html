@@ -525,7 +525,7 @@ canvas{width:100%;height:100%}
   }
 
   .title h1{
-    font-size:21px !important;
+    font-size:18px !important;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -808,7 +808,7 @@ canvas{width:100%;height:100%}
       </div>
       <div class="title">
         <h1>CENTRAL OPERACIONAL – TRANSPORTE FRETADO</h1>
-        <div class="sub">POC – TELEMETRIA EM TEMPO REAL</div>
+        <div class="sub">POC – TELEMETRIA COM ATUALIZAÇÃO A CADA 1 MINUTO</div>
       </div>
     </div>
     <div class="filters">
@@ -887,7 +887,7 @@ canvas{width:100%;height:100%}
 
   <div class="footer">
     <div>POC desenvolvida para fins de demonstração – A3P Transporte</div>
-    <div class="right"><span>Dados simulados para POC | Estrutura pronta para Apps Script / API</span><span class="sep">|</span><span>Atualização automática a cada 1 minuto</span></div>
+    <div class="right"><span>Dados da aba Frota Atual | Integração Google Sheets + Apps Script</span><span class="sep">|</span><span>Atualização automática a cada 1 minuto</span></div>
   </div>
 </div>
 
@@ -1033,6 +1033,40 @@ function formatarDataHora(valor){
   if(Number.isNaN(d.getTime())) return String(valor);
   return d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 }
+function formatarTurno(valor){
+  if(valor===null || valor===undefined || valor==="") return "-";
+
+  // Já veio corretamente como HH:mm ou HH:mm:ss.
+  const texto=String(valor).trim();
+  let m=texto.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if(m){
+    return String(m[1]).padStart(2,"0")+":"+m[2];
+  }
+
+  // Google Sheets pode devolver horários como uma data de 1899.
+  // Ex.: Sat Dec 30 1899 06:00:00 GMT...
+  m=texto.match(/\b(\d{1,2}):(\d{2}):\d{2}\b/);
+  if(m){
+    return String(m[1]).padStart(2,"0")+":"+m[2];
+  }
+
+  // Se vier como número fracionário do dia (ex.: 0.25 = 06:00).
+  const numero=Number(valor);
+  if(Number.isFinite(numero) && numero>=0 && numero<1){
+    const minutos=Math.round(numero*24*60);
+    const hh=Math.floor(minutos/60)%24;
+    const mm=minutos%60;
+    return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0");
+  }
+
+  // Última tentativa: objeto/data interpretável.
+  const d=new Date(valor);
+  if(!Number.isNaN(d.getTime())){
+    return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  }
+
+  return texto;
+}
 function statusClass(s){return s==="Em viagem"?"green":s==="Parado"?"yellow":"red"}
 const PAGE_SIZE=10;
 let currentPage=0;
@@ -1058,7 +1092,7 @@ function render(){
   const moving=data.filter(v=>v.status==="Em viagem").length, stopped=data.filter(v=>v.status==="Parado").length, off=data.filter(v=>v.status==="Desligado").length;
   const delayed=data.filter(v=>v.delay>0).length, avgSpeed=Math.round(data.reduce((a,b)=>a+b.speed,0)/total), avgDelay=Math.round(data.reduce((a,b)=>a+b.delay,0)/total);
   q("#kpiTotal").textContent=data.length; q("#kpiMoving").textContent=moving; q("#kpiStopped").textContent=stopped; q("#kpiOff").textContent=off; q("#kpiSpeed").textContent=avgSpeed; q("#kpiDelay").textContent=delayed;
-  q("#pctTotal").textContent="100% da frota"; q("#pctMoving").textContent=Math.round(moving/total*100)+"% da frota"; q("#pctStopped").textContent=Math.round(stopped/total*100)+"% da frota"; q("#pctOff").textContent=Math.round(off/total*100)+"% da frota"; q("#pctDelay").textContent=Math.round(delayed/total*100)+"% da frota";
+  q("#pctTotal").textContent=data.length ? "100% da frota" : "Sem dados"; q("#pctMoving").textContent=Math.round(moving/total*100)+"% da frota"; q("#pctStopped").textContent=Math.round(stopped/total*100)+"% da frota"; q("#pctOff").textContent=Math.round(off/total*100)+"% da frota"; q("#pctDelay").textContent=Math.round(delayed/total*100)+"% da frota";
   const datasValidas=data.map(v=>new Date(v.dataHora)).filter(d=>!Number.isNaN(d.getTime()));
   q("#lastUpdate").textContent=datasValidas.length
     ? formatarDataHora(new Date(Math.max(...datasValidas.map(d=>d.getTime()))))
@@ -1167,7 +1201,7 @@ function receberFrotaAtual(payload){
     client:String(v.client||""),
     unit:String(v.unit||""),
     line:String(v.line||""),
-    shift:String(v.shift||""),
+    shift:formatarTurno(v.shift),
     driver:String(v.driver||""),
     lat:Number(v.lat),
     lon:Number(v.lon),
@@ -1183,7 +1217,7 @@ function receberFrotaAtual(payload){
   render();
 
   const atualizado=payload.atualizadoEm ? formatarDataHora(payload.atualizadoEm) : fmtDate();
-  mostrarStatusDados(`Planilha sincronizada • ${atualizado}`,false);
+  mostrarStatusDados(`Frota Atual sincronizada • ${atualizado}`,false);
 }
 
 function mostrarStatusDados(texto,erro=false){
