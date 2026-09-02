@@ -772,6 +772,27 @@ canvas{width:100%;height:100%}
   .fleet-pager .page-arrow{width:24px;height:24px;font-size:18px}
 }
 
+
+.sheet-status{
+  position:fixed;
+  right:12px;
+  bottom:10px;
+  z-index:99999;
+  max-width:min(420px,calc(100vw - 24px));
+  padding:7px 11px;
+  border:1px solid #35536d;
+  border-radius:7px;
+  background:rgba(7,27,45,.92);
+  color:#cbd8e5;
+  font-size:10px;
+  box-shadow:0 3px 12px rgba(0,0,0,.3);
+  pointer-events:none;
+}
+.sheet-status.error{
+  border-color:#a64b45;
+  color:#ffd5d1;
+}
+
 </style>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -905,27 +926,9 @@ const operationCoords = {
   "Operação Magalu": {lat:-22.87500, lon:-46.35000}
 };
 
-let fleet=assignments.map((a,i)=>{
-  const base=operationCoords[a[2]];
-  const initialStatus=["Em viagem","Parado","Em viagem","Em viagem","Desligado","Em viagem","Em viagem","Parado","Em viagem","Desligado","Em viagem","Em viagem","Em viagem","Em viagem","Parado","Em viagem","Em viagem","Em viagem","Parado","Em viagem"][i];
-  const variation=initialStatus==="Em viagem"?0.070:initialStatus==="Parado"?0.012:0.004;
+let fleet=[];
 
-  return {
-    id:`BUS-${String(i+1).padStart(3,"0")}`,
-    garage:a[0],
-    client:a[1],
-    unit:a[2],
-    line:a[3],
-    shift:a[4],
-    driver:drivers[i],
-    speed:[56,0,67,18,0,44,32,0,64,0,49,35,58,22,0,46,31,73,39,51][i],
-    status:initialStatus,
-    delay:[0,12,0,0,0,0,5,8,0,0,0,0,0,0,0,0,0,0,0,0][i],
-    ignition:initialStatus==="Desligado"?"OFF":"ON",
-    lat:base.lat+(Math.random()*variation*2-variation),
-    lon:base.lon+(Math.random()*variation*2-variation)
-  };
-});
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwoLE1MKzKWDFR5OKxsvau35dMqCls_-ju7jaKKu4Kop-SO4YenDpJBeMm7j2bsR7XFJA/exec";
 
 const referencePoints=[
   {name:"Bauducco • Fábrica",lat:-22.88219,lon:-46.36044},
@@ -996,10 +999,21 @@ function initRealMap(){
 
 const q=s=>document.querySelector(s);
 function populateFilters(){
-  [...new Set(fleet.map(v=>v.garage))].forEach(v=>q("#garagemFilter").insertAdjacentHTML("beforeend",`<option>${v}</option>`));
-  [...new Set(fleet.map(v=>v.client))].forEach(v=>q("#clienteFilter").insertAdjacentHTML("beforeend",`<option>${v}</option>`));
-  [...new Set(fleet.map(v=>v.unit))].forEach(v=>q("#unidadeFilter").insertAdjacentHTML("beforeend",`<option>${v}</option>`));
-  [...new Set(fleet.map(v=>v.shift))].forEach(v=>q("#turnoFilter").insertAdjacentHTML("beforeend",`<option>${v}</option>`));
+  const ids=["garagemFilter","clienteFilter","unidadeFilter","turnoFilter"];
+  const campos=[
+    [...new Set(fleet.map(v=>v.garage).filter(Boolean))].sort(),
+    [...new Set(fleet.map(v=>v.client).filter(Boolean))].sort(),
+    [...new Set(fleet.map(v=>v.unit).filter(Boolean))].sort(),
+    [...new Set(fleet.map(v=>v.shift).filter(Boolean))].sort()
+  ];
+
+  ids.forEach((id,i)=>{
+    const select=q("#"+id);
+    const atual=select.value || "Todos";
+    select.innerHTML='<option>Todos</option>';
+    campos[i].forEach(v=>select.insertAdjacentHTML("beforeend",`<option>${v}</option>`));
+    if([...select.options].some(o=>o.value===atual)) select.value=atual;
+  });
 }
 function filtered(){
   const g=q("#garagemFilter").value,c=q("#clienteFilter").value,u=q("#unidadeFilter").value,t=q("#turnoFilter").value;
@@ -1011,6 +1025,12 @@ function filtered(){
   );
 }
 function fmtDate(d=new Date()){
+  return d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+}
+function formatarDataHora(valor){
+  if(!valor) return "-";
+  const d=new Date(valor);
+  if(Number.isNaN(d.getTime())) return String(valor);
   return d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 }
 function statusClass(s){return s==="Em viagem"?"green":s==="Parado"?"yellow":"red"}
@@ -1039,13 +1059,15 @@ function render(){
   const delayed=data.filter(v=>v.delay>0).length, avgSpeed=Math.round(data.reduce((a,b)=>a+b.speed,0)/total), avgDelay=Math.round(data.reduce((a,b)=>a+b.delay,0)/total);
   q("#kpiTotal").textContent=data.length; q("#kpiMoving").textContent=moving; q("#kpiStopped").textContent=stopped; q("#kpiOff").textContent=off; q("#kpiSpeed").textContent=avgSpeed; q("#kpiDelay").textContent=delayed;
   q("#pctTotal").textContent="100% da frota"; q("#pctMoving").textContent=Math.round(moving/total*100)+"% da frota"; q("#pctStopped").textContent=Math.round(stopped/total*100)+"% da frota"; q("#pctOff").textContent=Math.round(off/total*100)+"% da frota"; q("#pctDelay").textContent=Math.round(delayed/total*100)+"% da frota";
-  q("#lastUpdate").textContent=fmtDate();
+  const datasValidas=data.map(v=>new Date(v.dataHora)).filter(d=>!Number.isNaN(d.getTime()));
+  q("#lastUpdate").textContent=datasValidas.length
+    ? formatarDataHora(new Date(Math.max(...datasValidas.map(d=>d.getTime()))))
+    : "-";
 
   updatePager(data.length);
   const pageStart=currentPage*PAGE_SIZE;
-  const rows=data.slice(pageStart,pageStart+PAGE_SIZE).map(v=>`<tr><td><span class="dot ${statusClass(v.status)}"></span></td><td>${v.id}</td><td>${v.garage}</td><td>${v.client}</td><td>${v.unit}</td><td>${v.line}</td><td>${v.shift}</td><td>${v.driver}</td><td>${v.speed} km/h</td><td>${v.status}</td><td>${v.delay}</td><td>${v.ignition}</td><td>${new Date().toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})} ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</td></tr>`).join("");
+  const rows=data.slice(pageStart,pageStart+PAGE_SIZE).map(v=>`<tr><td><span class="dot ${statusClass(v.status)}"></span></td><td>${v.id}</td><td>${v.garage}</td><td>${v.client}</td><td>${v.unit}</td><td>${v.line}</td><td>${v.shift}</td><td>${v.driver}</td><td>${v.speed} km/h</td><td>${v.status}</td><td>${v.delay}</td><td>${v.ignition}</td><td>${formatarDataHora(v.dataHora)}</td></tr>`).join("");
   q("#fleetBody").innerHTML=rows;
-  q("#pageLabel").textContent=`1 - ${Math.min(10,data.length)} / ${data.length}`;
 
   initRealMap();
 
@@ -1098,7 +1120,7 @@ function render(){
     note.className="map-note";
     q("#map").appendChild(note);
   }
-  note.textContent="Mapa real: OpenStreetMap • Coordenadas simuladas do Apps Script";
+  note.textContent="Mapa real: OpenStreetMap • Dados recebidos da aba Frota Atual";
 
   drawDonut(q("#donut"),moving,stopped,off);
   drawBars(q("#speedChart"),data);
@@ -1132,32 +1154,77 @@ function drawDelayBars(data){
   const labels=["Sem atraso (0)","1 a 10","11 a 20","Mais de 20"],classes=["greenbar","yellowbar","orangebar","redbar"],max=Math.max(...cats,1);
   q("#delayBars").innerHTML=cats.map((v,i)=>`<div class="drow"><div>${labels[i]}</div><div class="bar"><span class="${classes[i]}" style="width:${v/max*100}%"></span></div><div>${v}</div></div>`).join("");
 }
-function simulate(){
-  fleet=fleet.map(v=>{
-    let status=v.status;
-    const r=Math.random();
-    if(r<.70)status="Em viagem"; else if(r<.90)status="Parado"; else status="Desligado";
-    const speed=status==="Em viagem"?Math.floor(18+Math.random()*62):0;
-    const delay=Math.random()<.17?Math.floor(1+Math.random()*18):0;
-    const base=operationCoords[v.unit];
-    const variation=status==="Em viagem"?0.070:status==="Parado"?0.012:0.004;
-    const newLat=base.lat+(Math.random()*variation*2-variation);
-    const newLon=base.lon+(Math.random()*variation*2-variation);
+function receberFrotaAtual(payload){
+  if(!payload || !Array.isArray(payload.frota)){
+    console.error("Resposta inválida do Apps Script",payload);
+    mostrarStatusDados("Erro ao interpretar os dados da planilha.",true);
+    return;
+  }
 
-    return {
-      ...v,
-      status,
-      speed,
-      delay,
-      ignition:status==="Desligado"?"OFF":"ON",
-      lat:newLat,
-      lon:newLon
-    };
-  });
+  fleet=payload.frota.map(v=>({
+    id:String(v.id||""),
+    garage:String(v.garage||""),
+    client:String(v.client||""),
+    unit:String(v.unit||""),
+    line:String(v.line||""),
+    shift:String(v.shift||""),
+    driver:String(v.driver||""),
+    lat:Number(v.lat),
+    lon:Number(v.lon),
+    speed:Number(v.speed)||0,
+    ignition:String(v.ignition||""),
+    status:String(v.status||""),
+    delay:Number(v.delay)||0,
+    dataHora:v.dataHora||null
+  })).filter(v=>v.id && Number.isFinite(v.lat) && Number.isFinite(v.lon));
 
+  populateFilters();
+  normalizePage(filtered().length);
   render();
+
+  const atualizado=payload.atualizadoEm ? formatarDataHora(payload.atualizadoEm) : fmtDate();
+  mostrarStatusDados(`Planilha sincronizada • ${atualizado}`,false);
 }
-populateFilters();render();
+
+function mostrarStatusDados(texto,erro=false){
+  let el=document.getElementById("sheetStatus");
+  if(!el){
+    el=document.createElement("div");
+    el.id="sheetStatus";
+    el.className="sheet-status";
+    document.body.appendChild(el);
+  }
+  el.textContent=texto;
+  el.classList.toggle("error",erro);
+}
+
+function carregarFrotaAtual(){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("COLE_AQUI")){
+    mostrarStatusDados("Configure a URL do Web App do Google Apps Script no HTML.",true);
+    return;
+  }
+
+  mostrarStatusDados("Atualizando dados da Frota Atual...",false);
+
+  const antigo=document.getElementById("jsonpFrotaAtual");
+  if(antigo) antigo.remove();
+
+  const script=document.createElement("script");
+  script.id="jsonpFrotaAtual";
+  script.src=APPS_SCRIPT_URL
+    +"?callback=receberFrotaAtual&t="
+    +Date.now();
+
+  script.onerror=()=>{
+    mostrarStatusDados("Não foi possível acessar o Google Sheets.",true);
+  };
+
+  document.body.appendChild(script);
+}
+
+populateFilters();
+render();
+carregarFrotaAtual();
 
 ["garagemFilter","clienteFilter","unidadeFilter","turnoFilter"].forEach(id=>{
   q("#"+id).addEventListener("change",()=>{
@@ -1182,8 +1249,8 @@ q("#nextPage").addEventListener("click",()=>{
   }
 });
 
-q("#refreshBtn").addEventListener("click",simulate);
-setInterval(simulate,60000);
+q("#refreshBtn").addEventListener("click",carregarFrotaAtual);
+setInterval(carregarFrotaAtual,60000);
 window.addEventListener("resize",render);
 </script>
 
