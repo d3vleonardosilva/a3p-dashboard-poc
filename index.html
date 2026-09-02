@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Central Operacional – Transporte Fretado</title>
+<style>
+:root{
+  --bg:#061728;
+  --panel:#0a1d30;
+  --panel2:#0d2339;
+  --line:#31516d;
+  --text:#f3f7fb;
+  --muted:#b9c7d6;
+  --blue:#2e9afe;
+  --green:#39c253;
+  --yellow:#ffb400;
+  --orange:#ff7a00;
+  --red:#ff4b3e;
+  --purple:#c26be8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#02111e;color:var(--text);font-family:Arial,Helvetica,sans-serif}
+body{min-width:0;min-height:100vh;overflow-x:hidden}
+.dashboard{
+  width:100vw;
+  min-height:100vh;
+  margin:0;
+  padding:clamp(12px,1.2vw,18px) clamp(14px,1.6vw,26px) 12px;
+  background:
+    radial-gradient(circle at 50% -20%, rgba(37,99,235,.08), transparent 40%),
+    linear-gradient(180deg,#061a2b 0%,#051726 100%);
+}
+.topbar{
+  min-height:64px; display:grid; grid-template-columns:1fr minmax(650px,820px) 210px; gap:14px; align-items:center;
+}
+.brand{display:flex;align-items:center;gap:16px}
+.a3p-logo{
+  width:145px;height:62px;display:flex;align-items:center;justify-content:center;
+  padding:2px 10px 2px 2px;border-right:1px solid rgba(255,255,255,.14)
+}
+.a3p-logo img{
+  max-width:128px;max-height:58px;display:block;object-fit:contain;
+  background:white;border-radius:4px;
+}
+.title h1{margin:0;font-size:24px;letter-spacing:.1px;font-weight:800}
+.title .sub{margin-top:4px;font-size:14px;color:#6bc1ff;letter-spacing:.3px}
+.filters{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.filter label{display:block;font-size:13px;margin-bottom:7px}
+.filter select{
+  width:150px;height:36px;background:#081b2e;color:white;border:1px solid #42627e;border-radius:5px;
+  padding:0 10px;font-size:13px;outline:none
+}
+.updated{
+  height:58px;border:1px solid #38536d;border-radius:10px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;background:rgba(7,25,42,.65)
+}
+.updated .small{font-size:12px}.updated .time{font-size:13px;color:#43d96c;margin-top:6px}
+.refresh{font-size:30px;color:#65a9df;cursor:pointer;user-select:none}
+.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;margin-top:13px}
+.card{
+  min-height:118px;height:clamp(118px,13vh,138px);border:1px solid #35536f;border-radius:11px;background:linear-gradient(180deg,rgba(12,35,56,.96),rgba(7,26,43,.96));
+  padding:11px 16px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden
+}
+.card.blue{border-color:#2576b8}.card.green{border-color:#2d7350}.card.yellow{border-color:#766337}
+.card.red{border-color:#764948}.card.orange{border-color:#665e4b}.card.purple{border-color:#62456e}
+.card-title{text-align:center;font-size:14px}
+.blue .card-title{color:#35a9ff}.green .card-title{color:#3ce169}.yellow .card-title{color:#ffbd12}
+.red .card-title{color:#ff4c43}.orange .card-title{color:#ff8d21}.purple .card-title{color:#d281ee}
+.card-main{display:flex;align-items:center;justify-content:center;gap:28px;margin-top:-3px}
+.card-value{font-size:37px;font-weight:800}
+.card-icon{font-size:35px;opacity:.95}
+.blue .card-icon{color:#2364a1}.green .card-icon{color:#31bf4c}.yellow .card-icon{color:#ffb000}
+.red .card-icon{color:#ff493d}.orange .card-icon{color:#ff7d00}.purple .card-icon{color:#c16ce7}
+.card-foot{text-align:center;font-size:13px;color:#d6dde5}.green .card-foot{color:#3cdc60}.yellow .card-foot{color:#ffc10b}
+.red .card-foot{color:#ff4a3d}.purple .card-foot{color:#d37de9}
+.main-grid{display:grid;grid-template-columns:1.08fr 1fr;gap:12px;margin-top:12px}
+.panel{border:1px solid #35536d;border-radius:12px;background:linear-gradient(180deg,#0a1f33,#081b2d);overflow:hidden}
+.panel-title{height:43px;display:flex;align-items:center;padding:0 15px;font-size:14px;font-weight:800}
+.table-panel{height:clamp(410px,46vh,510px)}
+.table-wrap{padding:0 7px 5px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:#10304b;padding:10px 6px;text-align:center}
+tbody td{padding:9px 6px;border-bottom:1px solid #29455d;text-align:center;white-space:nowrap}
+tbody tr:hover{background:#0f2940}
+.dot{display:inline-block;width:13px;height:13px;border-radius:50%;vertical-align:middle}
+.dot.green{background:#39bd51}.dot.yellow{background:#ffb20a}.dot.red{background:#ff4b3f}
+.pagination{display:flex;justify-content:flex-end;align-items:center;gap:10px;color:#d4dfeb;padding:10px 16px;font-size:13px}
+.page-arrow{font-size:26px;color:#55738e}
+.map-panel{height:clamp(410px,46vh,510px)}
+.map{
+  margin:0 4px 0;
+  height:calc(100% - 87px);
+  min-height:320px;
+  position:relative;
+  border-radius:8px;
+  overflow:hidden;
+  background:#10283b;
+}
+#map .leaflet-container{width:100%;height:100%}
+#map{z-index:1}
+.leaflet-control-attribution{font-size:9px!important}
+.leaflet-control-zoom a{background:#0b2236!important;color:#fff!important;border-color:#34516b!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0b2236;color:#fff}
+.leaflet-popup-content{margin:10px 12px;font-size:12px;line-height:1.4}
+.bus-div-icon{background:transparent;border:none}
+.bus-marker{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:13px;font-weight:900;
+  border:1px solid rgba(255,255,255,.55);
+  box-shadow:0 2px 7px rgba(0,0,0,.38);
+}
+.bus-marker.green{background:#2fa942}
+.bus-marker.yellow{background:#e69900}
+.bus-marker.red{background:#d43b32}
+.operation-div-icon{background:transparent;border:none}
+.operation-marker{
+  width:12px;height:12px;border-radius:50%;
+  background:#f4f7fb;border:3px solid #1976d2;
+  box-shadow:0 0 0 3px rgba(25,118,210,.22);
+}
+.map-note{
+  position:absolute;left:10px;bottom:8px;z-index:500;
+  font-size:10px;color:#d8e6f2;background:rgba(4,18,31,.78);
+  padding:4px 7px;border-radius:4px;pointer-events:none
+}
+.map:after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 50px rgba(1,10,18,.5);pointer-events:none}
+.marker{
+  position:absolute;width:37px;height:37px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  border:2px solid rgba(255,255,255,.28);box-shadow:0 1px 6px rgba(0,0,0,.5);font-size:18px;color:white;transform:translate(-50%,-50%);
+  z-index:3
+}
+.marker.green{background:#2fa942}.marker.yellow{background:#e69900}.marker.red{background:#d43b32}
+.geo-label{position:absolute;z-index:2;transform:translate(-50%,-50%);font-size:11px;font-weight:700;color:#cbd8e4;background:rgba(4,18,31,.72);border:1px solid rgba(130,158,182,.32);border-radius:5px;padding:3px 6px;pointer-events:none;white-space:nowrap}
+.geo-point{position:absolute;z-index:1;width:7px;height:7px;border-radius:50%;background:#95aec3;transform:translate(-50%,-50%);box-shadow:0 0 0 3px rgba(149,174,195,.12);pointer-events:none}
+.map-note{position:absolute;left:10px;bottom:8px;z-index:2;font-size:10px;color:#9fb2c4;background:rgba(4,18,31,.72);padding:3px 6px;border-radius:4px;pointer-events:none}
+.map-legend{height:44px;display:flex;align-items:center;justify-content:center;gap:32px;font-size:12px}
+.map-legend .lg{display:flex;align-items:center;gap:7px}
+.map-legend .circle{width:20px;height:20px;border-radius:50%}
+.bottom-grid{display:grid;grid-template-columns:1.02fr 1.25fr 1.12fr .73fr;gap:10px;margin-top:12px}
+.bottom{height:clamp(220px,24vh,270px);padding-bottom:8px}
+.chart-area{height:calc(100% - 43px);padding:8px 16px}
+canvas{width:100%;height:100%}
+.delay-bars{padding:12px 16px 0}
+.drow{display:grid;grid-template-columns:92px 1fr 34px;align-items:center;margin:18px 0;font-size:12px}
+.bar{height:26px;background:#16324a;position:relative}
+.bar > span{display:block;height:100%}
+.greenbar{background:linear-gradient(90deg,#2ca34b,#42c95b)}
+.yellowbar{background:linear-gradient(90deg,#f2a800,#ffbf0f)}
+.orangebar{background:linear-gradient(90deg,#f06d00,#ff8c22)}
+.redbar{background:linear-gradient(90deg,#e23f34,#ff5549)}
+.gauge-wrap{height:175px;position:relative;padding:15px 12px 0}
+.gauge{width:184px;height:92px;margin:0 auto;position:relative;overflow:hidden}
+.gauge-ring{
+  position:absolute;width:184px;height:184px;border-radius:50%;border:16px solid #2fa94a;border-right-color:#ffb000;border-bottom-color:#ff473c;
+  transform:rotate(45deg);top:0;left:0
+}
+.gauge-mask{position:absolute;left:17px;top:17px;width:150px;height:150px;border-radius:50%;background:#0a1f33}
+.needle{position:absolute;left:91px;bottom:0;width:66px;height:4px;background:#eef2f5;transform-origin:0 50%;transform:rotate(212deg);border-radius:3px}
+.needle:before{content:"";position:absolute;width:12px;height:12px;border-radius:50%;background:#eef2f5;left:-6px;top:-4px}
+.gauge-value{text-align:center;margin-top:-3px;font-size:31px;font-weight:800}
+.gauge-unit{text-align:center;font-size:12px;margin-top:4px}
+.gauge-min,.gauge-max{position:absolute;bottom:38px;font-size:12px}.gauge-min{left:31px}.gauge-max{right:31px}
+.footer{
+  height:46px;border:1px solid #35536d;border-radius:11px;margin-top:16px;padding:0 28px;
+  display:flex;align-items:center;justify-content:space-between;font-size:13px
+}
+.footer .right{display:flex;gap:18px}
+.sep{opacity:.65}
+
+/* Desktop grande: mantém exatamente a organização original e ocupa a tela toda. */
+@media (min-width: 1101px){
+  .dashboard{width:100vw;min-height:100vh}
+  .cards{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .main-grid{grid-template-columns:minmax(0,1.08fr) minmax(0,1fr)}
+  .bottom-grid{grid-template-columns:minmax(0,1.02fr) minmax(0,1.25fr) minmax(0,1.12fr) minmax(0,.73fr)}
+}
+
+/* Tablet: reorganiza para melhorar a leitura, sem perder nenhum conteúdo. */
+@media (min-width: 701px) and (max-width: 1100px){
+  body{overflow-x:hidden}
+  .dashboard{
+    width:100%;
+    min-height:100vh;
+    padding:12px;
+  }
+  .topbar{
+    min-height:0;
+    grid-template-columns:minmax(0,1fr) 250px;
+    grid-template-areas:
+      "brand updated"
+      "filters filters";
+    gap:10px;
+  }
+  .brand{grid-area:brand;min-width:0}
+  .updated{grid-area:updated}
+  .filters{
+    grid-area:filters;
+    justify-content:flex-start;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .filter{flex:1 1 220px}
+  .filter select{width:100%}
+  .a3p-logo{width:115px;height:54px}
+  .a3p-logo img{max-width:100px;max-height:50px}
+  .title h1{font-size:clamp(17px,2.8vw,23px)}
+  .title .sub{font-size:12px}
+
+  .cards{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:10px;
+  }
+
+  .main-grid{
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+  .table-panel,.map-panel{
+    height:auto;
+    min-height:430px;
+  }
+  .table-wrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  table{min-width:1180px}
+  .map{
+    height:360px;
+    min-height:360px;
+  }
+
+  .bottom-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+  .bottom{
+    height:250px;
+  }
+  .chart-area{
+    height:195px;
+  }
+  .footer{
+    height:auto;
+    min-height:48px;
+    padding:10px 16px;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+}
+
+/* Celular: tudo vira uma coluna com componentes maiores e legíveis. */
+@media (max-width: 700px){
+  body{
+    overflow-x:hidden;
+    background:#02111e;
+  }
+  .dashboard{
+    width:100%;
+    min-height:100vh;
+    padding:8px;
+  }
+  .topbar{
+    min-height:0;
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "brand"
+      "updated"
+      "filters";
+    gap:9px;
+  }
+  .brand{
+    grid-area:brand;
+    align-items:center;
+    gap:9px;
+  }
+  .a3p-logo{
+    width:82px;
+    height:48px;
+    padding-right:6px;
+  }
+  .a3p-logo img{
+    max-width:72px;
+    max-height:44px;
+  }
+  .title h1{
+    font-size:15px;
+    line-height:1.15;
+  }
+  .title .sub{
+    font-size:9.5px;
+    margin-top:3px;
+  }
+  .updated{
+    grid-area:updated;
+    width:100%;
+    height:52px;
+  }
+  .filters{
+    grid-area:filters;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    width:100%;
+  }
+  .filter label{font-size:11px;margin-bottom:4px}
+  .filter select{width:100%;height:34px;font-size:12px}
+
+  .cards{
+    grid-template-columns:1fr;
+    gap:8px;
+    margin-top:9px;
+  }
+  .card{
+    min-height:102px;
+    height:102px;
+    padding:8px 12px;
+  }
+  .card-title{font-size:12px}
+  .card-main{gap:20px}
+  .card-value{font-size:30px}
+  .card-icon{font-size:27px}
+  .card-foot{font-size:11px}
+
+  .main-grid{
+    grid-template-columns:1fr;
+    gap:8px;
+    margin-top:8px;
+  }
+  .panel-title{
+    height:40px;
+    padding:0 11px;
+    font-size:12px;
+  }
+  .table-panel,.map-panel{
+    height:auto;
+    min-height:380px;
+  }
+  .table-wrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  table{
+    min-width:980px;
+    font-size:11px;
+  }
+  thead th{padding:8px 5px}
+  tbody td{padding:8px 5px}
+  .pagination{padding:8px 12px}
+
+  .map{
+    height:300px;
+    min-height:300px;
+  }
+  .map-legend{
+    height:auto;
+    min-height:44px;
+    padding:7px;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .bottom-grid{
+    grid-template-columns:1fr;
+    gap:8px;
+    margin-top:8px;
+  }
+  .bottom{
+    height:230px;
+  }
+  .chart-area{
+    height:180px;
+  }
+  .delay-bars{padding-top:6px}
+  .drow{
+    grid-template-columns:82px 1fr 28px;
+    margin:14px 0;
+    font-size:11px;
+  }
+
+  .footer{
+    height:auto;
+    min-height:54px;
+    margin-top:9px;
+    padding:9px 12px;
+    display:block;
+    font-size:10.5px;
+    line-height:1.5;
+  }
+  .footer .right{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:4px;
+  }
+}
+
+
+/* DESKTOP: mantém o layout original inteiro e encaixa tudo na tela, sem rolagem. */
+.desktop-fit{
+  width:100%;
+}
+
+@media (min-width:1101px){
+  html,body{
+    width:100%;
+    height:100%;
+    margin:0;
+    overflow:hidden;
+  }
+
+  body{
+    background:#02111e;
+  }
+
+  .desktop-fit{
+    width:100vw;
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+
+  .dashboard{
+    width:1536px !important;
+    height:1024px !important;
+    min-height:1024px !important;
+    margin:0 !important;
+    padding:16px 23px 10px !important;
+    flex:0 0 1536px;
+    transform-origin:center center;
+  }
+
+  .topbar{
+    height:64px !important;
+    min-height:64px !important;
+  }
+
+  .card{
+    height:129px !important;
+    min-height:129px !important;
+  }
+
+  .table-panel,
+  .map-panel{
+    height:465px !important;
+    min-height:465px !important;
+  }
+
+  .map{
+    height:367px !important;
+    min-height:367px !important;
+  }
+
+  .bottom{
+    height:246px !important;
+  }
+
+  .chart-area{
+    height:190px !important;
+  }
+}
+
+/* Em tablet e celular, não usa escala: mantém a reorganização responsiva. */
+@media (max-width:1100px){
+  html,body{
+    overflow-x:hidden;
+    overflow-y:auto;
+  }
+
+  .desktop-fit{
+    width:100%;
+    height:auto;
+    display:block;
+    overflow:visible;
+  }
+
+  .dashboard{
+    transform:none !important;
+  }
+}
+
+
+/* =========================================================
+   AJUSTE DE LAYOUT — evita sobreposição de cards e filtros
+   ========================================================= */
+.dashboard,
+.topbar,
+.cards,
+.main-grid,
+.bottom-grid,
+.panel,
+.card,
+.brand,
+.filters,
+.updated{
+  min-width:0;
+}
+
+.cards > *,
+.main-grid > *,
+.bottom-grid > *{
+  min-width:0;
+}
+
+/* Desktop: quatro filtros em uma única linha e blocos com alturas
+   compatíveis com a área-base de 1536x1024. */
+@media (min-width:1101px){
+  .topbar{
+    height:82px !important;
+    min-height:82px !important;
+    grid-template-columns:minmax(0,1fr) 640px 190px !important;
+    gap:12px !important;
+  }
+
+  .brand{
+    min-width:0;
+    overflow:hidden;
+  }
+
+  .title{
+    min-width:0;
+  }
+
+  .title h1{
+    font-size:21px !important;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .filters{
+    display:grid !important;
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    gap:8px !important;
+    align-items:end !important;
+    justify-content:stretch !important;
+    flex-wrap:nowrap !important;
+    width:100%;
+  }
+
+  .filter{
+    min-width:0;
+  }
+
+  .filter label{
+    margin-bottom:5px !important;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .filter select{
+    width:100% !important;
+    min-width:0 !important;
+    height:34px !important;
+  }
+
+  .updated{
+    height:58px !important;
+    min-width:0;
+  }
+
+  .cards{
+    gap:12px !important;
+    margin-top:10px !important;
+  }
+
+  .card{
+    height:116px !important;
+    min-height:116px !important;
+    padding:9px 12px !important;
+  }
+
+  .card-title{
+    font-size:13px !important;
+  }
+
+  .card-main{
+    gap:16px !important;
+  }
+
+  .card-value{
+    font-size:32px !important;
+    line-height:1;
+  }
+
+  .card-icon{
+    font-size:30px !important;
+    flex:0 0 auto;
+  }
+
+  .card-foot{
+    font-size:12px !important;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .main-grid{
+    margin-top:10px !important;
+    gap:10px !important;
+  }
+
+  .table-panel,
+  .map-panel{
+    height:430px !important;
+    min-height:430px !important;
+  }
+
+  .map{
+    height:332px !important;
+    min-height:332px !important;
+  }
+
+  .bottom-grid{
+    margin-top:10px !important;
+    gap:10px !important;
+  }
+
+  .bottom{
+    height:216px !important;
+  }
+
+  .chart-area{
+    height:163px !important;
+  }
+
+  .footer{
+    margin-top:10px !important;
+    height:42px !important;
+    min-height:42px !important;
+  }
+}
+
+/* Tablet: garante que cada card ocupe apenas a própria célula. */
+@media (min-width:701px) and (max-width:1100px){
+  .card{
+    width:100%;
+    min-width:0;
+  }
+
+  .cards{
+    align-items:stretch;
+  }
+}
+
+/* Mobile: remove qualquer largura mínima herdada dos componentes. */
+@media (max-width:700px){
+  .card,
+  .panel,
+  .filter,
+  .filter select{
+    width:100%;
+    min-width:0;
+  }
+}
+
+
+.map-load-error{
+  position:absolute;
+  inset:50% auto auto 50%;
+  transform:translate(-50%,-50%);
+  z-index:600;
+  width:min(78%,360px);
+  padding:14px 16px;
+  text-align:center;
+  border-radius:8px;
+  background:rgba(4,18,31,.92);
+  border:1px solid #34516b;
+  color:#dbe9f5;
+  font-size:12px;
+  line-height:1.45;
+}
+.map-load-error strong{display:block;margin-bottom:3px;color:#fff;font-size:13px}
+
+
+/* AJUSTE CARD ATRASO DOS VEÍCULOS */
+.delay-bars{
+  padding:8px 14px 4px !important;
+  height:calc(100% - 43px);
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-evenly;
+  overflow:hidden;
+}
+.delay-bars .drow{
+  display:grid;
+  grid-template-columns:76px minmax(0,1fr) 22px !important;
+  align-items:center;
+  gap:6px;
+  margin:0 !important;
+  min-height:31px;
+  font-size:10px !important;
+  line-height:1.05;
+}
+.delay-bars .drow > div:first-child{
+  white-space:nowrap;
+  overflow:visible;
+  font-weight:700;
+}
+.delay-bars .bar{
+  height:24px !important;
+  min-width:0;
+}
+.delay-bars .drow > div:last-child{
+  text-align:left;
+  font-size:11px;
+  font-weight:700;
+}
+@media (max-width:700px){
+  .delay-bars{
+    padding:6px 10px 3px !important;
+  }
+  .delay-bars .drow{
+    grid-template-columns:72px minmax(0,1fr) 20px !important;
+    min-height:29px;
+    font-size:9.5px !important;
+  }
+  .delay-bars .bar{
+    height:22px !important;
+  }
+}
+
+
+/* PAGINAÇÃO FROTA ATUAL */
+.fleet-title{
+  justify-content:space-between;
+  gap:12px;
+}
+.fleet-title > span:first-child{
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.fleet-pager{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex:0 0 auto;
+  font-size:11px;
+  color:#cbd8e5;
+}
+.fleet-pager .page-arrow{
+  width:28px;
+  height:28px;
+  padding:0;
+  border:1px solid #35536d;
+  border-radius:6px;
+  background:#10304b;
+  color:#fff;
+  font:700 22px/24px Arial,sans-serif;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .15s ease,opacity .15s ease;
+}
+.fleet-pager .page-arrow:hover:not(:disabled){background:#18476d}
+.fleet-pager .page-arrow:disabled{
+  opacity:.32;
+  cursor:default;
+}
+@media(max-width:700px){
+  .fleet-title{font-size:11px;padding:0 8px}
+  .fleet-pager{gap:4px;font-size:9px}
+  .fleet-pager .page-arrow{width:24px;height:24px;font-size:18px}
+}
+
+</style>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+</head>
+<body>
+<div class="desktop-fit" id="desktopFit">
+<div class="dashboard" id="dashboardRoot">
+  <div class="topbar">
+    <div class="brand">
+      <div class="a3p-logo" aria-label="A3P Transporte">
+        <img src="data:image/jpeg;base64,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" alt="A3P Transporte">
+      </div>
+      <div class="title">
+        <h1>CENTRAL OPERACIONAL – TRANSPORTE FRETADO</h1>
+        <div class="sub">POC – TELEMETRIA EM TEMPO REAL</div>
+      </div>
+    </div>
+    <div class="filters">
+      <div class="filter"><label>Garagem</label><select id="garagemFilter"><option value="Todos">Todos</option></select></div>
+      <div class="filter"><label>Cliente</label><select id="clienteFilter"><option value="Todos">Todos</option></select></div>
+      <div class="filter"><label>Unidade / Operação</label><select id="unidadeFilter"><option value="Todos">Todos</option></select></div>
+      <div class="filter"><label>Turno</label><select id="turnoFilter"><option value="Todos">Todos</option></select></div>
+    </div>
+    <div class="updated">
+      <div><div class="small">Última atualização</div><div class="time" id="lastUpdate"></div></div>
+      <div class="refresh" id="refreshBtn">↻</div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card blue"><div class="card-title">TOTAL DE VEÍCULOS</div><div class="card-main"><div class="card-value" id="kpiTotal">20</div><div class="card-icon">▣</div></div><div class="card-foot" id="pctTotal">100% da frota</div></div>
+    <div class="card green"><div class="card-title">EM VIAGEM</div><div class="card-main"><div class="card-value" id="kpiMoving">14</div><div class="card-icon">▰</div></div><div class="card-foot" id="pctMoving">70% da frota</div></div>
+    <div class="card yellow"><div class="card-title">PARADOS</div><div class="card-main"><div class="card-value" id="kpiStopped">4</div><div class="card-icon">▰</div></div><div class="card-foot" id="pctStopped">20% da frota</div></div>
+    <div class="card red"><div class="card-title">DESLIGADOS</div><div class="card-main"><div class="card-value" id="kpiOff">2</div><div class="card-icon">⏻</div></div><div class="card-foot" id="pctOff">10% da frota</div></div>
+    <div class="card orange"><div class="card-title">VELOCIDADE MÉDIA</div><div class="card-main"><div class="card-value"><span id="kpiSpeed">43</span><span style="font-size:20px"> km/h</span></div><div class="card-icon">◴</div></div><div class="card-foot">Média da frota</div></div>
+    <div class="card purple"><div class="card-title">COM ATRASO</div><div class="card-main"><div class="card-value" id="kpiDelay">3</div><div class="card-icon">◷</div></div><div class="card-foot" id="pctDelay">15% da frota</div></div>
+  </div>
+
+  <div class="main-grid">
+    <div class="panel table-panel">
+      <div class="panel-title fleet-title">
+        <span>FROTA ATUAL – SITUAÇÃO DOS VEÍCULOS</span>
+        <div class="fleet-pager" aria-label="Paginação da frota">
+          <span id="pageLabel">1 - 10 / 20</span>
+          <button type="button" class="page-arrow" id="prevPage" aria-label="Página anterior">‹</button>
+          <button type="button" class="page-arrow" id="nextPage" aria-label="Próxima página">›</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Veículo</th><th>Garagem</th><th>Cliente</th><th>Unidade</th><th>Linha</th><th>Turno</th><th>Motorista</th><th>Velocidade</th><th>Status</th><th>Atraso (min)</th><th>Ignição</th><th>Data/Hora</th></tr></thead>
+          <tbody id="fleetBody"></tbody>
+        </table>
+      </div>
+      
+    </div>
+
+    <div class="panel map-panel">
+      <div class="panel-title">POSIÇÃO DOS VEÍCULOS — MAPA REAL</div>
+      <div class="map" id="map"></div>
+      <div class="map-legend">
+        <span class="lg"><span class="circle" style="background:#39bd51"></span>Em viagem</span>
+        <span class="lg"><span class="circle" style="background:#ffb20a"></span>Parado</span>
+        <span class="lg"><span class="circle" style="background:#ff4b3f"></span>Desligado</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="panel bottom">
+      <div class="panel-title">VEÍCULOS POR STATUS</div>
+      <div class="chart-area"><canvas id="donut"></canvas></div>
+    </div>
+    <div class="panel bottom">
+      <div class="panel-title">VELOCIDADE (KM/H)</div>
+      <div class="chart-area"><canvas id="speedChart"></canvas></div>
+    </div>
+    <div class="panel bottom">
+      <div class="panel-title">ATRASO DOS VEÍCULOS (MINUTOS)</div>
+      <div class="delay-bars" id="delayBars"></div>
+    </div>
+    <div class="panel bottom">
+      <div class="panel-title">ATRASO MÉDIO</div>
+      <div class="gauge-wrap">
+        <div class="gauge"><div class="gauge-ring"></div><div class="gauge-mask"></div><div class="needle" id="needle"></div></div>
+        <div class="gauge-min">0</div><div class="gauge-max">30</div>
+        <div class="gauge-value" id="avgDelay">3</div><div class="gauge-unit">minutos</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>POC desenvolvida para fins de demonstração – A3P Transporte</div>
+    <div class="right"><span>Dados simulados para POC | Estrutura pronta para Apps Script / API</span><span class="sep">|</span><span>Atualização automática a cada 1 minuto</span></div>
+  </div>
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const drivers=["Carlos","João","Marcos","Paulo","André","Roberto","Felipe","Ricardo","Sérgio","Daniel","Eduardo","Bruno","Alex","Fernando","Márcio","Rafael","Leandro","Gustavo","Diego","Henrique"];
+
+const assignments=[
+  ["Extrema","Bauducco","Fábrica","FAB-01","06:00"],
+  ["Extrema","Bauducco","Fábrica","FAB-02","06:00"],
+  ["Extrema","Bauducco","Fábrica","FAB-03","14:00"],
+  ["Extrema","Bauducco","Fábrica","FAB-04","22:00"],
+  ["Extrema","Bauducco","Fábrica","FAB-05","22:00"],
+  ["Extrema","Bauducco","CD Extrema (Roseira)","ROS-01","06:00"],
+  ["Extrema","Bauducco","CD Extrema (Roseira)","ROS-02","14:00"],
+  ["Extrema","Bauducco","CD Extrema (Roseira)","ROS-03","14:00"],
+  ["Extrema","Bauducco","CD Extrema (Roseira)","ROS-04","22:00"],
+  ["Extrema","Bauducco","CD Extrema (Roseira)","ROS-05","22:00"],
+  ["Vargem","Bauducco","CD Itapeva","ITA-01","06:00"],
+  ["Vargem","Bauducco","CD Itapeva","ITA-02","06:00"],
+  ["Vargem","Bauducco","CD Itapeva","ITA-03","14:00"],
+  ["Vargem","Bauducco","CD Itapeva","ITA-04","22:00"],
+  ["Vargem","Bauducco","CD Itapeva","ITA-05","22:00"],
+  ["Vargem","Magalu","Operação Magalu","MAG-01","06:00"],
+  ["Vargem","Magalu","Operação Magalu","MAG-02","14:00"],
+  ["Vargem","Magalu","Operação Magalu","MAG-03","14:00"],
+  ["Vargem","Magalu","Operação Magalu","MAG-04","22:00"],
+  ["Vargem","Magalu","Operação Magalu","MAG-05","22:00"]
+];
+
+const operationCoords = {
+  "Fábrica": {lat:-22.88219, lon:-46.36044},
+  "CD Extrema (Roseira)": {lat:-22.80999, lon:-46.28137},
+  "CD Itapeva": {lat:-22.76800, lon:-46.22000},
+  "Operação Magalu": {lat:-22.87500, lon:-46.35000}
+};
+
+let fleet=assignments.map((a,i)=>{
+  const base=operationCoords[a[2]];
+  const initialStatus=["Em viagem","Parado","Em viagem","Em viagem","Desligado","Em viagem","Em viagem","Parado","Em viagem","Desligado","Em viagem","Em viagem","Em viagem","Em viagem","Parado","Em viagem","Em viagem","Em viagem","Parado","Em viagem"][i];
+  const variation=initialStatus==="Em viagem"?0.070:initialStatus==="Parado"?0.012:0.004;
+
+  return {
+    id:`BUS-${String(i+1).padStart(3,"0")}`,
+    garage:a[0],
+    client:a[1],
+    unit:a[2],
+    line:a[3],
+    shift:a[4],
+    driver:drivers[i],
+    speed:[56,0,67,18,0,44,32,0,64,0,49,35,58,22,0,46,31,73,39,51][i],
+    status:initialStatus,
+    delay:[0,12,0,0,0,0,5,8,0,0,0,0,0,0,0,0,0,0,0,0][i],
+    ignition:initialStatus==="Desligado"?"OFF":"ON",
+    lat:base.lat+(Math.random()*variation*2-variation),
+    lon:base.lon+(Math.random()*variation*2-variation)
+  };
+});
+
+const referencePoints=[
+  {name:"Bauducco • Fábrica",lat:-22.88219,lon:-46.36044},
+  {name:"Bauducco • CD Extrema (Roseira)",lat:-22.80999,lon:-46.28137},
+  {name:"Bauducco • CD Itapeva",lat:-22.76800,lon:-46.22000},
+  {name:"Magalu • Operação Magalu",lat:-22.87500,lon:-46.35000}
+];
+
+let leafletMap=null;
+let busLayer=null;
+let operationLayer=null;
+let mapInitialized=false;
+
+function initRealMap(){
+  if(mapInitialized) return;
+
+  if(typeof L==="undefined"){
+    const map=q("#map");
+    if(map && !map.querySelector(".map-load-error")){
+      const aviso=document.createElement("div");
+      aviso.className="map-load-error";
+      aviso.innerHTML="<strong>Mapa indisponível</strong><br>Verifique a conexão com a internet. Os demais dados do dashboard continuam funcionando.";
+      map.appendChild(aviso);
+    }
+    return;
+  }
+
+  const oldError=q("#map .map-load-error");
+  if(oldError) oldError.remove();
+
+  leafletMap=L.map("map",{
+    zoomControl:true,
+    attributionControl:true
+  });
+
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    maxZoom:19,
+    attribution:'&copy; OpenStreetMap contributors'
+  }).addTo(leafletMap);
+
+  operationLayer=L.layerGroup().addTo(leafletMap);
+  busLayer=L.layerGroup().addTo(leafletMap);
+
+  const opBounds=[];
+  referencePoints.forEach(p=>{
+    opBounds.push([p.lat,p.lon]);
+
+    const icon=L.divIcon({
+      className:"operation-div-icon",
+      html:'<div class="operation-marker"></div>',
+      iconSize:[18,18],
+      iconAnchor:[9,9]
+    });
+
+    L.marker([p.lat,p.lon],{icon})
+      .bindTooltip(p.name,{direction:"top",offset:[0,-8],opacity:.95})
+      .addTo(operationLayer);
+  });
+
+  if(opBounds.length){
+    leafletMap.fitBounds(opBounds,{padding:[35,35],maxZoom:12});
+  }
+
+  mapInitialized=true;
+
+  setTimeout(()=>leafletMap.invalidateSize(),250);
+}
+
+const q=s=>document.querySelector(s);
+function populateFilters(){
+  [...new Set(fleet.map(v=>v.garage))].forEach(v=>q("#garagemFilter").insertAdjacentHTML("beforeend",`<option>${v}</option>`));
+  [...new Set(fleet.map(v=>v.client))].forEach(v=>q("#clienteFilter").insertAdjacentHTML("beforeend",`<option>${v}</option>`));
+  [...new Set(fleet.map(v=>v.unit))].forEach(v=>q("#unidadeFilter").insertAdjacentHTML("beforeend",`<option>${v}</option>`));
+  [...new Set(fleet.map(v=>v.shift))].forEach(v=>q("#turnoFilter").insertAdjacentHTML("beforeend",`<option>${v}</option>`));
+}
+function filtered(){
+  const g=q("#garagemFilter").value,c=q("#clienteFilter").value,u=q("#unidadeFilter").value,t=q("#turnoFilter").value;
+  return fleet.filter(v=>
+    (g==="Todos"||v.garage===g) &&
+    (c==="Todos"||v.client===c) &&
+    (u==="Todos"||v.unit===u) &&
+    (t==="Todos"||v.shift===t)
+  );
+}
+function fmtDate(d=new Date()){
+  return d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+}
+function statusClass(s){return s==="Em viagem"?"green":s==="Parado"?"yellow":"red"}
+const PAGE_SIZE=10;
+let currentPage=0;
+
+function normalizePage(dataLength){
+  const maxPage=Math.max(0,Math.ceil(dataLength/PAGE_SIZE)-1);
+  if(currentPage>maxPage) currentPage=maxPage;
+  if(currentPage<0) currentPage=0;
+  return maxPage;
+}
+
+function updatePager(dataLength){
+  const maxPage=normalizePage(dataLength);
+  const start=dataLength===0?0:currentPage*PAGE_SIZE+1;
+  const end=Math.min((currentPage+1)*PAGE_SIZE,dataLength);
+  q("#pageLabel").textContent=`${start} - ${end} / ${dataLength}`;
+  q("#prevPage").disabled=currentPage<=0;
+  q("#nextPage").disabled=currentPage>=maxPage;
+}
+
+function render(){
+  const data=filtered(), total=data.length||1;
+  const moving=data.filter(v=>v.status==="Em viagem").length, stopped=data.filter(v=>v.status==="Parado").length, off=data.filter(v=>v.status==="Desligado").length;
+  const delayed=data.filter(v=>v.delay>0).length, avgSpeed=Math.round(data.reduce((a,b)=>a+b.speed,0)/total), avgDelay=Math.round(data.reduce((a,b)=>a+b.delay,0)/total);
+  q("#kpiTotal").textContent=data.length; q("#kpiMoving").textContent=moving; q("#kpiStopped").textContent=stopped; q("#kpiOff").textContent=off; q("#kpiSpeed").textContent=avgSpeed; q("#kpiDelay").textContent=delayed;
+  q("#pctTotal").textContent="100% da frota"; q("#pctMoving").textContent=Math.round(moving/total*100)+"% da frota"; q("#pctStopped").textContent=Math.round(stopped/total*100)+"% da frota"; q("#pctOff").textContent=Math.round(off/total*100)+"% da frota"; q("#pctDelay").textContent=Math.round(delayed/total*100)+"% da frota";
+  q("#lastUpdate").textContent=fmtDate();
+
+  updatePager(data.length);
+  const pageStart=currentPage*PAGE_SIZE;
+  const rows=data.slice(pageStart,pageStart+PAGE_SIZE).map(v=>`<tr><td><span class="dot ${statusClass(v.status)}"></span></td><td>${v.id}</td><td>${v.garage}</td><td>${v.client}</td><td>${v.unit}</td><td>${v.line}</td><td>${v.shift}</td><td>${v.driver}</td><td>${v.speed} km/h</td><td>${v.status}</td><td>${v.delay}</td><td>${v.ignition}</td><td>${new Date().toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})} ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</td></tr>`).join("");
+  q("#fleetBody").innerHTML=rows;
+  q("#pageLabel").textContent=`1 - ${Math.min(10,data.length)} / ${data.length}`;
+
+  initRealMap();
+
+  if(leafletMap && busLayer){
+    busLayer.clearLayers();
+
+    const visibleBounds=[];
+
+    data.forEach(v=>{
+      visibleBounds.push([v.lat,v.lon]);
+
+      const cls=statusClass(v.status);
+      const icon=L.divIcon({
+        className:"bus-div-icon",
+        html:`<div class="bus-marker ${cls}">▣</div>`,
+        iconSize:[28,28],
+        iconAnchor:[14,14]
+      });
+
+      const popup=`
+        <strong>${v.id}</strong><br>
+        ${v.client} — ${v.unit}<br>
+        Linha: ${v.line} | Turno: ${v.shift}<br>
+        Motorista: ${v.driver}<br>
+        Status: ${v.status}<br>
+        Velocidade: ${v.speed} km/h<br>
+        Atraso: ${v.delay} min<br>
+        Lat/Lon: ${v.lat.toFixed(5)}, ${v.lon.toFixed(5)}
+      `;
+
+      L.marker([v.lat,v.lon],{icon})
+        .bindPopup(popup)
+        .addTo(busLayer);
+    });
+
+    if(data.length>0){
+      const allPoints=[
+        ...referencePoints.map(p=>[p.lat,p.lon]),
+        ...visibleBounds
+      ];
+      leafletMap.fitBounds(allPoints,{padding:[25,25],maxZoom:12});
+    }
+
+    setTimeout(()=>leafletMap.invalidateSize(),50);
+  }
+
+  let note=q("#map .map-note");
+  if(!note){
+    note=document.createElement("div");
+    note.className="map-note";
+    q("#map").appendChild(note);
+  }
+  note.textContent="Mapa real: OpenStreetMap • Coordenadas simuladas do Apps Script";
+
+  drawDonut(q("#donut"),moving,stopped,off);
+  drawBars(q("#speedChart"),data);
+  drawDelayBars(data);
+  q("#avgDelay").textContent=avgDelay;
+  const angle=180+(Math.min(avgDelay,30)/30)*180;
+  q("#needle").style.transform=`rotate(${angle}deg)`;
+}
+function drawDonut(canvas,a,b,c){
+  const dpr=window.devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;canvas.width=w*dpr;canvas.height=h*dpr;
+  const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+  const total=Math.max(a+b+c,1),cx=w*.34,cy=h*.52,r=Math.min(w,h)*.37,inner=r*.58,vals=[a,b,c],colors=["#39bd51","#ffb20a","#ff4b3f"],labels=["Em viagem","Parado","Desligado"];
+  let start=-Math.PI/2;
+  vals.forEach((v,i)=>{let end=start+2*Math.PI*v/total;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,end);ctx.closePath();ctx.fillStyle=colors[i];ctx.fill();start=end});
+  ctx.beginPath();ctx.arc(cx,cy,inner,0,Math.PI*2);ctx.fillStyle="#0a1f33";ctx.fill();
+  ctx.font="bold 14px Arial";ctx.fillStyle="#fff";ctx.textAlign="center";ctx.fillText(Math.round(a/total*100)+"%",cx+r*.55,cy+r*.42);
+  ctx.textAlign="left";ctx.font="12px Arial";
+  labels.forEach((l,i)=>{const y=48+i*28;ctx.fillStyle=colors[i];ctx.beginPath();ctx.arc(w*.66,y,7,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.fillText(`${l} (${vals[i]})`,w*.70,y+4)});
+}
+function drawBars(canvas,data){
+  const bins=[0,0,0,0,0];data.forEach(v=>{bins[Math.min(4,Math.floor(v.speed/21))]++});
+  const dpr=window.devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;canvas.width=w*dpr;canvas.height=h*dpr;
+  const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+  const left=42,bottom=h-28,top=18,right=w-10,max=Math.max(4,...bins);ctx.strokeStyle="#587089";ctx.lineWidth=1;
+  [0,25,50,75,100].forEach((n,i)=>{const y=bottom-(bottom-top)*(n/100);ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();ctx.fillStyle="#dfe7ef";ctx.font="11px Arial";ctx.fillText(n,left-28,y+4)});
+  const labels=["0 a 20","21 a 40","41 a 60","61 a 80","81 a 100"],bw=(right-left)/5*.48,gap=(right-left)/5;
+  bins.forEach((v,i)=>{const x=left+i*gap+gap*.23,bh=(bottom-top)*(v/max)*.78;ctx.fillStyle="#2f86e6";ctx.fillRect(x,bottom-bh,bw,bh);ctx.fillStyle="#fff";ctx.font="bold 13px Arial";ctx.textAlign="center";ctx.fillText(v,x+bw/2,bottom-bh-7);ctx.font="11px Arial";ctx.fillText(labels[i],x+bw/2,bottom+18)});
+}
+function drawDelayBars(data){
+  const cats=[0,0,0,0];data.forEach(v=>{if(v.delay===0)cats[0]++;else if(v.delay<=10)cats[1]++;else if(v.delay<=20)cats[2]++;else cats[3]++});
+  const labels=["Sem atraso (0)","1 a 10","11 a 20","Mais de 20"],classes=["greenbar","yellowbar","orangebar","redbar"],max=Math.max(...cats,1);
+  q("#delayBars").innerHTML=cats.map((v,i)=>`<div class="drow"><div>${labels[i]}</div><div class="bar"><span class="${classes[i]}" style="width:${v/max*100}%"></span></div><div>${v}</div></div>`).join("");
+}
+function simulate(){
+  fleet=fleet.map(v=>{
+    let status=v.status;
+    const r=Math.random();
+    if(r<.70)status="Em viagem"; else if(r<.90)status="Parado"; else status="Desligado";
+    const speed=status==="Em viagem"?Math.floor(18+Math.random()*62):0;
+    const delay=Math.random()<.17?Math.floor(1+Math.random()*18):0;
+    const base=operationCoords[v.unit];
+    const variation=status==="Em viagem"?0.070:status==="Parado"?0.012:0.004;
+    const newLat=base.lat+(Math.random()*variation*2-variation);
+    const newLon=base.lon+(Math.random()*variation*2-variation);
+
+    return {
+      ...v,
+      status,
+      speed,
+      delay,
+      ignition:status==="Desligado"?"OFF":"ON",
+      lat:newLat,
+      lon:newLon
+    };
+  });
+
+  render();
+}
+populateFilters();render();
+
+["garagemFilter","clienteFilter","unidadeFilter","turnoFilter"].forEach(id=>{
+  q("#"+id).addEventListener("change",()=>{
+    currentPage=0;
+    render();
+  });
+});
+
+q("#prevPage").addEventListener("click",()=>{
+  if(currentPage>0){
+    currentPage--;
+    render();
+  }
+});
+
+q("#nextPage").addEventListener("click",()=>{
+  const dataLength=filtered().length;
+  const maxPage=Math.max(0,Math.ceil(dataLength/PAGE_SIZE)-1);
+  if(currentPage<maxPage){
+    currentPage++;
+    render();
+  }
+});
+
+q("#refreshBtn").addEventListener("click",simulate);
+setInterval(simulate,60000);
+window.addEventListener("resize",render);
+</script>
+
+<script>
+(function () {
+  const BASE_WIDTH = 1536;
+  const BASE_HEIGHT = 1024;
+
+  const fit = document.getElementById("desktopFit");
+  const dashboard = document.getElementById("dashboardRoot");
+
+  function fitDesktopDashboard() {
+    if (!fit || !dashboard) return;
+
+    if (window.innerWidth >= 1101) {
+      const scaleX = window.innerWidth / BASE_WIDTH;
+      const scaleY = window.innerHeight / BASE_HEIGHT;
+      const scale = Math.min(scaleX, scaleY);
+
+      dashboard.style.transform = `scale(${scale})`;
+      dashboard.style.transformOrigin = "center center";
+    } else {
+      dashboard.style.transform = "none";
+    }
+  }
+
+  window.addEventListener("resize", fitDesktopDashboard);
+  window.addEventListener("orientationchange", fitDesktopDashboard);
+  fitDesktopDashboard();
+})();
+
+window.addEventListener("resize",()=>{
+  if(leafletMap){
+    setTimeout(()=>leafletMap.invalidateSize(),100);
+  }
+});
+
+</script>
+
+</body>
+</html>
